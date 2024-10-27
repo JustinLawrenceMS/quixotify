@@ -13,7 +13,7 @@ class Generator
         $this->client = $client;
     }
 
-    public function generate($type, $amount): array
+    public function generate($type, $amount): string
     {
         return $this->client->generateIpsumText($type, $amount);
     }

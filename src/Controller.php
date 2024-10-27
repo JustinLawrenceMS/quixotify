@@ -9,13 +9,11 @@ class Controller
 {
     private $pdo;
 
-    public function __construct(PDO $pdo = null)
+    public function __construct()
     {
-        if (is_null($pdo)) {
-            $this->pdo = new PDO('sqlite:database.db');
-        } else {
-            $this->pdo = $pdo;
-        }
+        $databasePath = __DIR__ . '/database.db';
+        print_r($databasePath);
+        $this->pdo = new PDO('sqlite:' . $databasePath);
     }
 
     private function validateInput($amount, $type)
@@ -64,7 +62,7 @@ class Controller
                 break;
         }
 
-        return ['ipsum_text' => $text];
+        return $text;
     }
 
     public function generateByCharacters($characters)
