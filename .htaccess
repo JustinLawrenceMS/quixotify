@@ -1,0 +1,1 @@
+php_value extension=pdo_sqlite.so
