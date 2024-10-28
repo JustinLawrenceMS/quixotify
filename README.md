@@ -25,9 +25,10 @@ composer require justinlawrencems/quixotify
 
 
 ```php
-use Quixotify\Quixotify;
+use Quixotify\Controller;
+use Quixotify\Generator;
 
-$quixotify = new Quixotify();
+$generator = new Generator(new Controller);
 $text = $quixotify->generate('characters', 500);
 
 echo $text;
@@ -38,20 +39,6 @@ echo $text;
 
 
 * `generate($type, $amount)`: Generate text by `$type` (`characters`, `words`, or `sentences`) and `$amount`.
-* `getApiUrl()`: Get the API URL used for text generation.
-* `setApiUrl($url)`: Set a custom API URL.
-
-
-## API Documentation
--------------------
-
-
-### Endpoints
-
-
-* `GET /characters?characters={number}`: Generate text by character count.
-* `GET /words?words={number}`: Generate text by word count.
-* `GET /sentences?sentences={number}`: Generate text by sentence count.
 
 
 ## Contributing
@@ -79,7 +66,4 @@ Justin Lawrence, MS
 -----------
 
 
-### 1.0.0
-
-
-* Initial release
+### v1.0.3-beta

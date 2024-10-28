@@ -12,8 +12,15 @@ class Controller
     public function __construct()
     {
         $databasePath = __DIR__ . '/database.db';
-        print_r($databasePath);
         $this->pdo = new PDO('sqlite:' . $databasePath);
+    }
+
+    private function neatenInput($text)
+    {
+        $text = trim($text); // Remove leading/trailing whitespace
+        $text = preg_replace('/\s+/', ' ', $text); // Replace multiple spaces with single space
+        $text = preg_replace('/” “/', '“', $text);
+        return $text;
     }
 
     private function validateInput($amount, $type)
@@ -62,7 +69,7 @@ class Controller
                 break;
         }
 
-        return $text;
+        return $this->neatenInput($text);
     }
 
     public function generateByCharacters($characters)
