@@ -12,7 +12,6 @@ class Controller
     public function __construct()
     {
         $databasePath = __DIR__ . '/database.db';
-        print_r($databasePath);
         $this->pdo = new PDO('sqlite:' . $databasePath);
     }
 
