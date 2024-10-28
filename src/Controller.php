@@ -47,18 +47,60 @@ class Controller
 
         switch ($type) {
             case 'characters':
-                $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute(['id' => $startingText['id'], 'limit' => ceil($amount / $startingText['text_length']) + 1]);
-                $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                $text = substr(implode(' ', $texts), 0, $amount);
+                $text = '';
+                $remainingChars = $amount;
+                $id = $startingText['id'];
+
+                do {
+                    $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id ORDER BY id ASC LIMIT 1';
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute(['id' => $id]);
+
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($row === false) break;
+
+                    $id++; // Increment ID for the next query.
+                    $textLength = strlen($row['text']);
+
+                    if ($textLength <= $remainingChars) {
+                        $text .= $row['text'];
+                        $remainingChars -= $textLength;
+                    } else {
+                        $text .= substr($row['text'], 0, $remainingChars);
+                        break;
+                    }
+
+                } while ($remainingChars > 0);
+
                 break;
             case 'words':
-                $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute(['id' => $startingText['id'], 'limit' => ceil($amount / $startingText['word_count']) + 1]);
-                $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                $text = implode(' ', explode(' ', implode(' ', $texts), $amount + 1));
+                $texts = [];
+                $remainingWords = $amount;
+                $id = $startingText['id'];
+
+                do {
+                    $sql = 'SELECT text, word_count FROM don_quixote_texts WHERE id >= :id ORDER BY id ASC LIMIT 1';
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute(['id' => $id]);
+
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($row === false) break;
+
+                    $id++; // Increment ID for the next query.
+                    $textWords = explode(' ', $row['text']);
+                    $rowWordCount = count($textWords);
+
+                    if ($rowWordCount <= $remainingWords) {
+                        $texts[] = $row['text'];
+                        $remainingWords -= $rowWordCount;
+                    } else {
+                        $texts[] = implode(' ', array_slice($textWords, 0, $remainingWords));
+                        break;
+                    }
+
+                } while ($remainingWords > 0);
+
+                $text = implode(' ', $texts);
                 break;
             case 'sentences':
                 $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
