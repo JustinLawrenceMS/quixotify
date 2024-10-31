@@ -17,9 +17,10 @@ class Controller
 
     private function neatenInput($text)
     {
-        $text = trim($text); // Remove leading/trailing whitespace
-        $text = preg_replace('/\s+/', ' ', $text); // Replace multiple spaces with single space
-        $text = preg_replace('/” “/', '“', $text);
+        // @TODO sanitize data in DB
+//        $text = trim($text); // Remove leading/trailing whitespace
+//        $text = preg_replace('/\s+/', ' ', $text); // Replace multiple spaces with single space
+//        $text = preg_replace('/” “/', '“', $text);
         return $text;
     }
 
@@ -48,11 +49,15 @@ class Controller
         var_dump('amount: ' . $amount);
         switch ($type) {
             case 'characters':
-                $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute(['id' => $startingText['id'], 'limit' => ceil($amount / $startingText['text_length']) + 1]);
-                $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                $implodedTexts = implode(' ', $texts);
+                $id = $startingText['id'];
+                $limit = ceil($amount / 75 );
+                $sql = "SELECT text FROM don_quixote_texts WHERE id >= $id LIMIT $limit";
+                $stmt = $this->pdo->query($sql);
+                $stmt->execute();
+                $fetchedText = implode('', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+                $text = mb_substr($fetchedText, 0, $amount, 'UTF-8');
+                var_dump("Requested in Controller: $amount, Generated in Controller: " . mb_strlen($text, 'UTF-8'));
+                break;
             case 'words':
                 $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
                 $stmt = $this->pdo->prepare($sql);

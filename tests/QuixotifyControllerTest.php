@@ -18,27 +18,30 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
         $this->assertIsString($ipsumText);
         $this->assertGreaterThan(0, mb_strlen($ipsumText));
     }
+
     public function testCharacterCount(): void
     {
-        $this->markTestSkipped();
-        $i = 0;
-        while ($i < 5) {
-            $amount = 100;
-            $controller = new Controller(new PDO('sqlite:database.db', '', ''));
-            $generator = new Generator($controller);
+        for ($i = 0; $i < 5; $i++) {
+            $amount = rand(1, 10000);
+            $controller = new Controller(new PDO('sqlite:database.db'));
 
+            $generator = new Generator($controller);
             $ipsumText = $generator->generate('characters', $amount);
 
+            // Debugging output for actual and expected lengths
+            var_dump("Requested: $amount, Generated: " . mb_strlen($ipsumText, 'UTF-8'));
+
+            // Assertion check
             $this->assertEquals($amount, mb_strlen($ipsumText, 'UTF-8'));
-            $this->assertTrue(abs(mb_strlen($ipsumText, 'UTF-8') - $amount) <= 10);
-            $i++;
         }
     }
+
     public function testWordCount(): void
     {
         $i = 0;
         while ($i < 5) {
-            $amount = 15;
+            $amount = rand(1, 100);
+            var_dump('test amount: ', $amount);
             $controller = new Controller(new PDO('sqlite:database.db', '', ''));
             $generator = new Generator($controller);
 
