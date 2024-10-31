@@ -15,14 +15,6 @@ class Controller
         $this->pdo = new PDO('sqlite:' . $databasePath);
     }
 
-    private function neatenInput($text)
-    {
-        // @TODO sanitize data in DB
-//        $text = trim($text); // Remove leading/trailing whitespace
-//        $text = preg_replace('/\s+/', ' ', $text); // Replace multiple spaces with single space
-//        $text = preg_replace('/” “/', '“', $text);
-        return $text;
-    }
 
     private function validateInput($amount, $type)
     {
@@ -46,7 +38,6 @@ class Controller
     {
         $startingText = $this->getStartingText();
 
-        var_dump('amount: ' . $amount);
         switch ($type) {
             case 'characters':
                 $id = $startingText['id'];
@@ -56,27 +47,29 @@ class Controller
                 $stmt->execute();
                 $fetchedText = implode('', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
                 $text = mb_substr($fetchedText, 0, $amount, 'UTF-8');
-                var_dump("Requested in Controller: $amount, Generated in Controller: " . mb_strlen($text, 'UTF-8'));
                 break;
             case 'words':
-                $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute(['id' => $startingText['id'], 'limit' => ceil($amount / $startingText['word_count']) + 1]);
+                $limit = ceil($amount / $startingText['word_count']) + 10;
+                $sql = "SELECT text FROM don_quixote_texts WHERE id >= {$startingText['id']} LIMIT $limit";
+                $stmt = $this->pdo->query($sql);
+                $stmt->execute();
                 $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 $words = explode(' ', implode(' ', explode(' ', implode(' ', $texts), $amount)));
                 $words = array_slice($words, 0, $amount);
                 $text = implode(' ', $words);
                 break;
             case 'sentences':
-                $sql = 'SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit';
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute(['id' => $startingText['id'], 'limit' => $amount]);
+                $limit = (int) $amount;
+                $sql = "SELECT text FROM don_quixote_texts WHERE id >= {$startingText['id']} LIMIT $limit";
+                $stmt = $this->pdo->query($sql);
+                $stmt->execute();
                 $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 $text = implode(' ', $texts);
+                var_dump($text);
                 break;
         }
 
-        return $this->neatenInput($text);
+        return $text;
     }
 
     public function generateByCharacters($characters)
