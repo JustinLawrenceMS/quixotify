@@ -65,7 +65,6 @@ class Controller
                 $stmt->execute();
                 $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 $text = implode(' ', $texts);
-                var_dump($text);
                 break;
         }
 

@@ -47,8 +47,6 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
             $ipsumText = $generator->generate('sentences', $amount);
 
             $testResult = preg_split('/[\\!\\?\\.]/', trim($ipsumText), -1, PREG_SPLIT_NO_EMPTY);
-            var_dump($amount);
-            var_dump($testResult);
             $this->assertEquals(count($testResult), $amount);
             $i++;
         }
