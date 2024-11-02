@@ -67,3 +67,10 @@ Justin Lawrence, MS
 
 
 ### v1.0.3-beta
+
+## See it in action
+
+This API uses Quixotify:
+
+https://soothsayer-api.com/api/v1/donquixote/characters?characters=50
+
