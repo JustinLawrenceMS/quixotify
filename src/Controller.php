@@ -45,8 +45,9 @@ class Controller
                 $sql = "SELECT text FROM don_quixote_texts WHERE id >= $id LIMIT $limit";
                 $stmt = $this->pdo->query($sql);
                 $stmt->execute();
-                $fetchedText = implode('', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+                $fetchedText = implode(' ', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
                 $text = mb_substr($fetchedText, 0, $amount, 'UTF-8');
+                $text = mb_substr($text, 0, -3, 'UTF-8') . '...';
                 break;
             case 'words':
                 $limit = ceil($amount / $startingText['word_count']) + 10;
@@ -57,6 +58,7 @@ class Controller
                 $words = explode(' ', implode(' ', explode(' ', implode(' ', $texts), $amount)));
                 $words = array_slice($words, 0, $amount);
                 $text = implode(' ', $words);
+                $text = trim($text);
                 break;
             case 'sentences':
                 $limit = (int) $amount;
@@ -65,6 +67,7 @@ class Controller
                 $stmt->execute();
                 $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 $text = implode(' ', $texts);
+                $text = trim($text);
                 break;
         }
 
