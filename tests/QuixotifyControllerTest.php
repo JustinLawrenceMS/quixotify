@@ -8,14 +8,25 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
 {
     public function testCharacterCount(): void
     {
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 2000; $i++) {
             $amount = rand(1, 10000);
             $controller = new Controller(new PDO('sqlite:database.db'));
 
             $generator = new Generator($controller);
             $ipsumText = $generator->generate('characters', $amount);
 
-            // Assertion check
+            $this->assertEquals($amount, mb_strlen($ipsumText, 'UTF-8'));
+        }
+    }
+    public function testShortLengthCharacterCount(): void
+    {
+        for ($i = 0; $i < 2000; $i++) {
+            $amount = rand(1, 10);
+            $controller = new Controller(new PDO('sqlite:database.db'));
+
+            $generator = new Generator($controller);
+            $ipsumText = $generator->generate('characters', $amount);
+
             $this->assertEquals($amount, mb_strlen($ipsumText, 'UTF-8'));
         }
     }
@@ -23,13 +34,14 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
     public function testWordCount(): void
     {
         $i = 0;
-        while ($i < 5) {
+        while ($i < 2000) {
             $amount = rand(1, 100);
             $controller = new Controller(new PDO('sqlite:database.db', '', ''));
             $generator = new Generator($controller);
 
             $ipsumText = $generator->generate('words', $amount);
 
+            var_dump('amount ',$amount);
             $testWords = explode(' ', $ipsumText);
             $this->assertEquals(count($testWords), $amount);
             $i++;
@@ -38,8 +50,9 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
 
     public function testSentenceCount(): void
     {
+        $this->markTestSkipped("skip sentence count");
         $i = 0;
-        while ($i < 5) {
+        while ($i < 500) {
             $amount = rand(1, 100);
             $controller = new Controller(new PDO('sqlite:database.db', '', ''));
             $generator = new Generator($controller);

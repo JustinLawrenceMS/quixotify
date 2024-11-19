@@ -46,8 +46,13 @@ class Controller
                 $stmt = $this->pdo->query($sql);
                 $stmt->execute();
                 $fetchedText = implode(' ', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
-                $text = mb_substr($fetchedText, 0, $amount, 'UTF-8');
-                $text = mb_substr($text, 0, -3, 'UTF-8') . '...';
+                $text = $this->pluckSubstring($fetchedText, $amount);
+                while (mb_strlen($text, 'UTF-8') < $amount) {
+                    $text = $this->checkCharactersLength($text, $amount);
+                }
+                if ($amount > 3) {
+                    $text = mb_substr($text, 0, -3, 'UTF-8') . '...';
+                }
                 break;
             case 'words':
                 $limit = ceil($amount / $startingText['word_count']) + 10;
@@ -55,10 +60,15 @@ class Controller
                 $stmt = $this->pdo->query($sql);
                 $stmt->execute();
                 $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                $words = explode(' ', implode(' ', explode(' ', implode(' ', $texts), $amount)));
-                $words = array_slice($words, 0, $amount);
+                $words = explode(' ', trim(implode(' ', explode(' ', trim(implode(' ', $texts))))));
+                $words = $this->sanitizeWords($words);
                 $text = implode(' ', $words);
                 $text = trim($text);
+                while (count(explode(' ', $text)) < $amount) {
+                    $text = $this->checkWordsLength($text, $amount);
+                }
+                $text = $this->pluckSomeWords($text, $amount);
+                var_dump("method returns", $text);
                 break;
             case 'sentences':
                 $limit = (int) $amount;
@@ -90,5 +100,43 @@ class Controller
     {
         $this->validateInput($sentences, 'sentences');
         return $this->generateIpsumText('sentences', $sentences);
+    }
+
+    public function pluckSubstring(string $text, int $amount): string
+    {
+        return mb_substr($text, 0, $amount, 'UTF-8');
+    }
+
+    public function pluckSomeWords(string $text, int $amount): string
+    {
+        $words = explode(' ', $text);
+        $words = array_slice($words, 0, $amount);
+        return implode(' ', $words);
+    }
+
+    public function checkCharactersLength(string $text, int $amount): string
+    {
+        $length = mb_strlen($text, 'UTF-8');
+        if ($length < $amount) {
+            $secondText = $this->generateIpsumText('characters', $amount);
+            $text .= ' ' . $secondText;
+            $text = $this->pluckSubstring($text, $amount);
+            return $text;
+        }
+        return $text;
+    }
+    public function checkWordsLength(string $text, int $amount): string
+    {
+        if (count(explode(' ', $text)) < $amount) {
+            $text2 = $this->generateIpsumText('words', $amount);
+            $text .= ' ' . $text2;
+            return $this->pluckSomeWords($text, $amount);
+        }
+        return $text;
+    }
+
+    public function sanitizeWords(array $words): array
+    {
+        return array_filter($words);
     }
 }
