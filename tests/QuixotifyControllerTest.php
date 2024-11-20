@@ -41,7 +41,6 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
 
             $ipsumText = $generator->generate('words', $amount);
 
-            var_dump('amount ',$amount);
             $testWords = explode(' ', $ipsumText);
             $this->assertEquals(count($testWords), $amount);
             $i++;
@@ -50,7 +49,6 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
 
     public function testSentenceCount(): void
     {
-        $this->markTestSkipped("skip sentence count");
         $i = 0;
         while ($i < 500) {
             $amount = rand(1, 100);

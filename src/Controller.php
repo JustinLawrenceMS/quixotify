@@ -68,7 +68,6 @@ class Controller
                     $text = $this->checkWordsLength($text, $amount);
                 }
                 $text = $this->pluckSomeWords($text, $amount);
-                var_dump("method returns", $text);
                 break;
             case 'sentences':
                 $limit = (int) $amount;
