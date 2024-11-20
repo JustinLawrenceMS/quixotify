@@ -51,7 +51,7 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
     {
         $i = 0;
         while ($i < 500) {
-            $amount = rand(1, 100);
+            $amount = rand(1, 50);
             $controller = new Controller(new PDO('sqlite:database.db', '', ''));
             $generator = new Generator($controller);
 

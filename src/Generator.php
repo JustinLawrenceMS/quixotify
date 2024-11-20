@@ -2,11 +2,11 @@
 
 namespace Quixotify;
 
-use Quixotify\Controller;
+use Exception;
 
 class Generator
 {
-    private $client;
+    private Controller $client;
 
     public function __construct(Controller $client)
     {
@@ -15,6 +15,10 @@ class Generator
 
     public function generate($type, $amount): string
     {
-        return $this->client->generateIpsumText($type, $amount);
+        try {
+            return $this->client->generateText($type, $amount);
+        } catch (Exception $e) {
+            return file_put_contents('php://stderr', $e->getMessage());
+        }
     }
 }

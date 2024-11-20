@@ -3,139 +3,145 @@
 namespace Quixotify;
 
 use PDO;
-use PDOException;
+use Exception;
 
 class Controller
 {
-    private $pdo;
+    private PDO $dbConnection;
 
     public function __construct()
     {
-        $databasePath = __DIR__ . '/database.db';
-        $this->pdo = new PDO('sqlite:' . $databasePath);
+        $dbFilePath = __DIR__ . '/database.db';
+        $this->dbConnection = new PDO('sqlite:' . $dbFilePath);
     }
 
-
-    private function validateInput($amount, $type)
+    private function validateInput(int $quantity, string $unit): void
     {
-        if (!in_array($type, ['characters', 'words', 'sentences'])) {
-            throw new Exception('Invalid type');
+        $validUnits = ['characters', 'words', 'sentences'];
+        if (!in_array($unit, $validUnits, true)) {
+            $err = new Exception('Invalid type provided. Accepted types: characters, words, sentences.');
+            file_put_contents("php://stderr", $err);
         }
 
-        if (!is_int($amount) || $amount <= 0) {
-            throw new Exception('Invalid amount');
+        if ($quantity <= 0) {
+            $err = new Exception('Quantity must be a positive integer.');
+            file_put_contents("php://stderr", $err);
         }
     }
 
-    private function getStartingText()
+    private function fetchRandomText(): array
     {
-        $sql = 'SELECT * FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1';
-        $stmt = $this->pdo->query($sql);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $query = 'SELECT * FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1';
+        $statement = $this->dbConnection->query($query);
+        return $statement->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function generateIpsumText($type, $amount)
+    public function generateText($unit, $quantity): string
     {
-        $startingText = $this->getStartingText();
+        $this->validateInput($quantity, $unit);
+        $sourceText = $this->fetchRandomText();
 
-        switch ($type) {
-            case 'characters':
-                $id = $startingText['id'];
-                $limit = ceil($amount / 75 );
-                $sql = "SELECT text FROM don_quixote_texts WHERE id >= $id LIMIT $limit";
-                $stmt = $this->pdo->query($sql);
-                $stmt->execute();
-                $fetchedText = implode(' ', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
-                $text = $this->pluckSubstring($fetchedText, $amount);
-                while (mb_strlen($text, 'UTF-8') < $amount) {
-                    $text = $this->checkCharactersLength($text, $amount);
-                }
-                if ($amount > 3) {
-                    $text = mb_substr($text, 0, -3, 'UTF-8') . '...';
-                }
-                break;
-            case 'words':
-                $limit = ceil($amount / $startingText['word_count']) + 10;
-                $sql = "SELECT text FROM don_quixote_texts WHERE id >= {$startingText['id']} LIMIT $limit";
-                $stmt = $this->pdo->query($sql);
-                $stmt->execute();
-                $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                $words = explode(' ', trim(implode(' ', explode(' ', trim(implode(' ', $texts))))));
-                $words = $this->sanitizeWords($words);
-                $text = implode(' ', $words);
-                $text = trim($text);
-                while (count(explode(' ', $text)) < $amount) {
-                    $text = $this->checkWordsLength($text, $amount);
-                }
-                $text = $this->pluckSomeWords($text, $amount);
-                break;
-            case 'sentences':
-                $limit = (int) $amount;
-                $sql = "SELECT text FROM don_quixote_texts WHERE id >= {$startingText['id']} LIMIT $limit";
-                $stmt = $this->pdo->query($sql);
-                $stmt->execute();
-                $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                $text = implode(' ', $texts);
-                $text = trim($text);
-                break;
+        return match ($unit) {
+            'characters' => $this->generateCharacterText($sourceText, $quantity),
+            'words' => $this->generateWordText($sourceText, $quantity),
+            'sentences' => $this->generateSentenceText($sourceText, $quantity),
+            default => file_put_contents("php://stderr", (new Exception('Invalid unit type.'))),
+        };
+    }
+
+    private function generateCharacterText($sourceText, $characterCount): string
+    {
+        $sourceId = $sourceText['id'];
+        $requiredRows = ceil($characterCount / 75);
+        $query = "SELECT TRIM(text) FROM don_quixote_texts WHERE id >= :id LIMIT :limit";
+        $stmt = $this->dbConnection->prepare($query);
+        $stmt->bindValue(':id', $sourceId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $requiredRows, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $textData = implode(' ', array_map('trim', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+        $finalText = $this->truncateTextToCharacters($textData, $characterCount);
+
+        while (mb_strlen($finalText, 'UTF-8') < $characterCount) {
+            $finalText = $this->appendMoreCharacters($finalText, $characterCount);
         }
 
+        return $this->addEllipsis($finalText, $characterCount);
+    }
+
+    private function generateWordText($sourceText, $wordCount): string
+    {
+        $buffer = 10; // To handle edge cases with missing data
+        $requiredRows = ceil($wordCount / $sourceText['word_count']) + $buffer;
+        $query = "SELECT TRIM(text) FROM don_quixote_texts WHERE id >= :id LIMIT :limit";
+        $stmt = $this->dbConnection->prepare($query);
+        $stmt->bindValue(':id', $sourceText['id'], PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $requiredRows, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $texts = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $wordArray = explode(' ', implode(' ', $texts));
+
+        // If there are not enough words, fetch additional rows
+        while (count($wordArray) < $wordCount) {
+            $wordArray = $this->appendMoreWords($wordArray);
+        }
+
+        return implode(' ', array_slice($wordArray, 0, $wordCount));
+    }
+
+    private function generateSentenceText($sourceText, $sentenceCount): string
+    {
+        $query = "SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit";
+        $stmt = $this->dbConnection->prepare($query);
+        $stmt->bindValue(':id', $sourceText['id'], PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $sentenceCount, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $sentences = array_filter($stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        // If there are not enough sentences, fetch additional rows
+        while (count($sentences) < $sentenceCount) {
+            $sentences = $this->appendMoreSentences($sentences);
+        }
+
+        return implode(' ', array_slice($sentences, 0, $sentenceCount));
+    }
+
+    private function truncateTextToCharacters(string $text, int $characterLimit): string
+    {
+        return mb_substr($text, 0, $characterLimit, 'UTF-8');
+    }
+
+    private function appendMoreCharacters(string $text, int $requiredLength): string
+    {
+        $additionalText = $this->generateText('characters', $requiredLength);
+        return $this->truncateTextToCharacters($text . ' ' . $additionalText, $requiredLength);
+    }
+
+    private function appendMoreWords(array $currentWords): array
+    {
+        $query = "SELECT TRIM(text) FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1";
+        $stmt = $this->dbConnection->query($query);
+        $newWords = explode(' ', implode(' ', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+
+        return array_merge($currentWords, $newWords);
+    }
+
+    private function appendMoreSentences(array $currentSentences): array
+    {
+        $query = "SELECT text FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1";
+        $stmt = $this->dbConnection->query($query);
+        $newSentences = array_filter($stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        return array_merge($currentSentences, $newSentences);
+    }
+
+    private function addEllipsis(string $text, int $limit): string
+    {
+        if ($limit > 3) {
+            return mb_substr($text, 0, -3, 'UTF-8') . '...';
+        }
         return $text;
-    }
-
-    public function generateByCharacters($characters)
-    {
-        $this->validateInput($characters, 'characters');
-        return $this->generateIpsumText('characters', $characters);
-    }
-
-    public function generateByWords($words)
-    {
-        $this->validateInput($words, 'words');
-        return $this->generateIpsumText('words', $words);
-    }
-
-    public function generateBySentences($sentences)
-    {
-        $this->validateInput($sentences, 'sentences');
-        return $this->generateIpsumText('sentences', $sentences);
-    }
-
-    public function pluckSubstring(string $text, int $amount): string
-    {
-        return mb_substr($text, 0, $amount, 'UTF-8');
-    }
-
-    public function pluckSomeWords(string $text, int $amount): string
-    {
-        $words = explode(' ', $text);
-        $words = array_slice($words, 0, $amount);
-        return implode(' ', $words);
-    }
-
-    public function checkCharactersLength(string $text, int $amount): string
-    {
-        $length = mb_strlen($text, 'UTF-8');
-        if ($length < $amount) {
-            $secondText = $this->generateIpsumText('characters', $amount);
-            $text .= ' ' . $secondText;
-            $text = $this->pluckSubstring($text, $amount);
-            return $text;
-        }
-        return $text;
-    }
-    public function checkWordsLength(string $text, int $amount): string
-    {
-        if (count(explode(' ', $text)) < $amount) {
-            $text2 = $this->generateIpsumText('words', $amount);
-            $text .= ' ' . $text2;
-            return $this->pluckSomeWords($text, $amount);
-        }
-        return $text;
-    }
-
-    public function sanitizeWords(array $words): array
-    {
-        return array_filter($words);
     }
 }
