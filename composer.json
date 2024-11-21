@@ -16,9 +16,11 @@
   "authors": [
     {
       "name": "Justin Lawrence",
-      "email": "your-email@example.com"
+      "email": "justin@chiclay.com"
     }
   ],
+  "organization": "Chiclay's",
+  "donation_link": "https://quixote.at.chiclay.com",
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require-dev": {
