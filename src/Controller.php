@@ -8,9 +8,14 @@ use Exception;
 class Controller
 {
     private PDO $dbConnection;
+    public string $table = "don_quixote_english_texts";
 
-    public function __construct()
+    public function __construct(string $outputLanguage = null)
     {
+        if ($outputLanguage == "Spanish") {
+            $this->table = "don_quixote_spanish_texts";
+        }
+
         $dbFilePath = __DIR__ . '/database.db';
         $this->dbConnection = new PDO('sqlite:' . $dbFilePath);
     }
@@ -31,7 +36,7 @@ class Controller
 
     private function fetchRandomText(): array
     {
-        $query = 'SELECT * FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1';
+        $query = "SELECT * FROM {$this->table} ORDER BY RANDOM() LIMIT 1";
         $statement = $this->dbConnection->query($query);
         return $statement->fetch(PDO::FETCH_ASSOC);
     }
@@ -53,7 +58,7 @@ class Controller
     {
         $sourceId = $sourceText['id'];
         $requiredRows = ceil($characterCount / 75);
-        $query = "SELECT TRIM(text) FROM don_quixote_texts WHERE id >= :id LIMIT :limit";
+        $query = "SELECT TRIM(text) FROM {$this->table} WHERE id >= :id LIMIT :limit";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindValue(':id', $sourceId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $requiredRows, PDO::PARAM_INT);
@@ -73,7 +78,7 @@ class Controller
     {
         $buffer = 10; // To handle edge cases with missing data
         $requiredRows = ceil($wordCount / $sourceText['word_count']) + $buffer;
-        $query = "SELECT TRIM(text) FROM don_quixote_texts WHERE id >= :id LIMIT :limit";
+        $query = "SELECT TRIM(text) FROM {$this->table} WHERE id >= :id LIMIT :limit";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindValue(':id', $sourceText['id'], PDO::PARAM_INT);
         $stmt->bindValue(':limit', $requiredRows, PDO::PARAM_INT);
@@ -92,7 +97,7 @@ class Controller
 
     private function generateSentenceText($sourceText, $sentenceCount): string
     {
-        $query = "SELECT text FROM don_quixote_texts WHERE id >= :id LIMIT :limit";
+        $query = "SELECT text FROM {$this->table} WHERE id >= :id LIMIT :limit";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindValue(':id', $sourceText['id'], PDO::PARAM_INT);
         $stmt->bindValue(':limit', $sentenceCount, PDO::PARAM_INT);
@@ -121,7 +126,7 @@ class Controller
 
     private function appendMoreWords(array $currentWords): array
     {
-        $query = "SELECT TRIM(text) FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1";
+        $query = "SELECT TRIM(text) FROM {$this->table} ORDER BY RANDOM() LIMIT 1";
         $stmt = $this->dbConnection->query($query);
         $newWords = explode(' ', implode(' ', $stmt->fetchAll(PDO::FETCH_COLUMN)));
 
@@ -130,7 +135,7 @@ class Controller
 
     private function appendMoreSentences(array $currentSentences): array
     {
-        $query = "SELECT text FROM don_quixote_texts ORDER BY RANDOM() LIMIT 1";
+        $query = "SELECT text FROM {$this->table} ORDER BY RANDOM() LIMIT 1";
         $stmt = $this->dbConnection->query($query);
         $newSentences = array_filter($stmt->fetchAll(PDO::FETCH_COLUMN));
 

@@ -10,7 +10,7 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
     {
         for ($i = 0; $i < 2000; $i++) {
             $amount = rand(1, 10000);
-            $controller = new Controller(new PDO('sqlite:database.db'));
+            $controller = new Controller();
 
             $generator = new Generator($controller);
             $ipsumText = $generator->generate('characters', $amount);
@@ -22,7 +22,7 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
     {
         for ($i = 0; $i < 2000; $i++) {
             $amount = rand(1, 10);
-            $controller = new Controller(new PDO('sqlite:database.db'));
+            $controller = new Controller();
 
             $generator = new Generator($controller);
             $ipsumText = $generator->generate('characters', $amount);
@@ -36,7 +36,7 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
         $i = 0;
         while ($i < 2000) {
             $amount = rand(1, 100);
-            $controller = new Controller(new PDO('sqlite:database.db', '', ''));
+            $controller = new Controller();
             $generator = new Generator($controller);
 
             $ipsumText = $generator->generate('words', $amount);
@@ -52,7 +52,63 @@ class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
         $i = 0;
         while ($i < 500) {
             $amount = rand(1, 50);
-            $controller = new Controller(new PDO('sqlite:database.db', '', ''));
+            $controller = new Controller();
+            $generator = new Generator($controller);
+
+            $ipsumText = $generator->generate('sentences', $amount);
+
+            $testResult = preg_split('/[\\!\\?\\.]/', trim($ipsumText), -1, PREG_SPLIT_NO_EMPTY);
+            $this->assertEquals(count($testResult), $amount);
+            $i++;
+        }
+    }
+    public function testCharacterCountInSpanish(): void
+{
+    for ($i = 0; $i < 2000; $i++) {
+        $amount = rand(1, 10000);
+        $controller = new Controller("Spanish");
+
+        $generator = new Generator($controller);
+        $ipsumText = $generator->generate('characters', $amount);
+
+        $this->assertEquals($amount, mb_strlen($ipsumText, 'UTF-8'));
+    }
+}
+    public function testShortLengthCharacterCountInSpanish(): void
+    {
+        for ($i = 0; $i < 2000; $i++) {
+            $amount = rand(1, 10);
+            $controller = new Controller("Spanish");
+
+            $generator = new Generator($controller);
+            $ipsumText = $generator->generate('characters', $amount);
+
+            $this->assertEquals($amount, mb_strlen($ipsumText, 'UTF-8'));
+        }
+    }
+
+    public function testWordCountInSpanish(): void
+    {
+        $i = 0;
+        while ($i < 2000) {
+            $amount = rand(1, 100);
+            $controller = new Controller("Spanish");
+            $generator = new Generator($controller);
+
+            $ipsumText = $generator->generate('words', $amount);
+
+            $testWords = explode(' ', $ipsumText);
+            $this->assertEquals(count($testWords), $amount);
+            $i++;
+        }
+    }
+
+    public function testSentenceCountInSpanish(): void
+    {
+        $i = 0;
+        while ($i < 500) {
+            $amount = rand(1, 50);
+            $controller = new Controller("Spanish");
             $generator = new Generator($controller);
 
             $ipsumText = $generator->generate('sentences', $amount);
