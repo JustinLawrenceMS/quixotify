@@ -33,7 +33,7 @@ The `Controller` class is responsible for connecting to the database, validating
 
 #### Constructor
 ```php
-public function __construct(string $outputLanguage = null)
+$controller = new Controller("Spanish");
 ```
 - **`$outputLanguage`**: Optional. Defaults to English (`"don_quixote_english_texts"`). Use `"Spanish"` for Spanish.
 
@@ -42,16 +42,6 @@ public function __construct(string $outputLanguage = null)
   Generate text based on the unit (`characters`, `words`, or `sentences`) and quantity.
 
 ---
-
-### Generator
-
-The `Generator` class acts as a wrapper around the `Controller`, providing error handling and a simplified interface.
-
-#### Constructor
-```php
-public function __construct(Controller $client)
-```
-- **`$client`**: An instance of the `Controller` class.
 
 #### Public Methods
 - **`generate(string $type, int $amount): string`**  
@@ -78,6 +68,7 @@ public function __construct(Controller $client)
    ```php
    use Quixotify\Generator;
 
+   $controller = new Controller("Spanish");
    $generator = new Generator($controller);
    $text = $generator->generate('characters', 100);
    echo $text;
