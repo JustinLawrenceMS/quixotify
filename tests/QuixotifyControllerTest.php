@@ -172,7 +172,7 @@ class QuixotifyControllerTest extends TestCase
             // @TODO: Fix this this.
             $this->assertTrue(
                 abs(num: count($testResult) - $amount) < 5
-                );
+            );
             $i++;
         }
     }
