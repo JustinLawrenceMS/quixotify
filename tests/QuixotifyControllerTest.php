@@ -2,9 +2,9 @@
 
 use Quixotify\Generator;
 use Quixotify\Controller;
-use function PHPUnit\Framework\assertEquals;
+use PHPUnit\Framework\TestCase;
 
-class QuixotifyControllerTest extends \PHPUnit\Framework\TestCase
+class QuixotifyControllerTest extends TestCase
 {
     public function testCharacterCount(): void
     {
