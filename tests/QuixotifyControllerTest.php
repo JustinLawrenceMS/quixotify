@@ -58,7 +58,6 @@ class QuixotifyControllerTest extends TestCase
                 count($testWords), 
                 $amount
             );
-
             $i++;
         }
     }
@@ -88,7 +87,6 @@ class QuixotifyControllerTest extends TestCase
             $this->assertTrue(
                 abs(num: count($testResult) - $amount) < 5
             );
-
             $i++;
         }
     }
